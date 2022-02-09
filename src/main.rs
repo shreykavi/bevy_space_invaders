@@ -6,6 +6,11 @@ const PLAYER_SPRITE: &str = "player_a_01.png";
 
 //  ECS
 
+struct WinSize {
+    w: f32,
+    h: f32
+}
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::rgb(0.04,0.04,0.04)))
@@ -17,6 +22,7 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
+        .add_startup_stage("game_setup_players", SystemStage::single(player_spawn))
         .run();
 }
 
@@ -33,12 +39,24 @@ fn setup(
 
     // position window to top left
     let mut window = windows.get_primary_mut().unwrap();
-    // window.set_position(IVec2::new(1600,200));
 
+    // Creates a resource that can later be used
+    commands.insert_resource(WinSize {
+        w: window.width(),
+        h: window.height()
+    });
+
+    // window.set_position(IVec2::new(1600,200));
+}
+
+fn player_spawn(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    win_size: Res<WinSize>
+) {
     // spawn a sprite
-    let bottom = -window.height() / 2.;
+    let bottom = -win_size.h / 2.;
     commands.spawn_bundle(SpriteBundle {
-        // material:materials.add(Color::rgb(1.,0.7,0.7,).into()),
         sprite: Sprite {
             custom_size: Some(Vec2::new(200., 100.)),
             color: Color::rgb(1.,0.7,0.7,),
