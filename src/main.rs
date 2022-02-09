@@ -22,9 +22,12 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+    asset_server: Res<AssetServer>,
     mut windows: ResMut<Windows>
 ){
+    // Watches for changes in files
+    asset_server.watch_for_changes().unwrap();
+
     // camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
@@ -33,6 +36,7 @@ fn setup(
     // window.set_position(IVec2::new(1600,200));
 
     // spawn a sprite
+    let bottom = -window.height() / 2.;
     commands.spawn_bundle(SpriteBundle {
         // material:materials.add(Color::rgb(1.,0.7,0.7,).into()),
         sprite: Sprite {
@@ -40,6 +44,13 @@ fn setup(
             color: Color::rgb(1.,0.7,0.7,),
             ..Default::default()
         },
+        transform: Transform {
+            // x,y,z
+            translation: Vec3::new(0., bottom + 75. / 4. + 20., 10.),
+            scale: Vec3::new(0.5,0.5,1.),
+            ..Default::default()
+        },
+        texture: asset_server.load(PLAYER_SPRITE),
         ..Default::default()
     });
 }
