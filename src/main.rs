@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 
 const PLAYER_SPRITE: &str = "player_a_01.png";
+const LASER_SPRITE: &str = "laser_a_01.png";
 const TIME_STEP: f32 = 1. / 60.;
 
 //  ECS
@@ -18,8 +19,14 @@ struct WinSize {
 struct Player;
 
 #[derive(Component)]
-struct PlayerSpeed(f32);
-impl Default for PlayerSpeed {
+struct Laser;
+
+#[derive(Component)]
+struct PlayerReadyFire(bool);
+
+#[derive(Component)]
+struct Speed(f32);
+impl Default for Speed {
     fn default() -> Self {
         Self(500.)
     }
@@ -38,6 +45,8 @@ fn main() {
         .add_startup_system(setup)
         .add_startup_stage("game_setup_players", SystemStage::single(player_spawn))
         .add_system(player_movement)
+        .add_system(player_fire)
+        .add_system(laser_movement)
         .run();
 }
 
@@ -80,12 +89,13 @@ fn player_spawn(mut commands: Commands, asset_server: Res<AssetServer>, win_size
             ..Default::default()
         })
         .insert(Player)
-        .insert(PlayerSpeed::default());
+        .insert(PlayerReadyFire(true))
+        .insert(Speed::default());
 }
 
 fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&PlayerSpeed, &mut Transform, With<Player>)>,
+    mut query: Query<(&Speed, &mut Transform, With<Player>)>,
 ) {
     let (speed, mut transform, _) = query.single_mut();
     {
@@ -97,5 +107,51 @@ fn player_movement(
             0.
         };
         transform.translation.x += dir * speed.0 * TIME_STEP;
+    }
+}
+
+fn player_fire(
+    mut commands: Commands,
+    keyboard_input: Res<Input<KeyCode>>,
+    asset_server: Res<AssetServer>,
+    mut query: Query<(&Transform, &mut PlayerReadyFire, With<Player>)>,
+) {
+    let (player_tf, mut ready_fire, _) = query.single_mut();
+    if ready_fire.0 && keyboard_input.pressed(KeyCode::Space) {
+        let x = player_tf.translation.x;
+        let y = player_tf.translation.y;
+        commands
+            .spawn_bundle(SpriteBundle {
+                transform: Transform {
+                    // x,y,z
+                    translation: Vec3::new(x, y + 10., 0.),
+                    ..Default::default()
+                },
+                texture: asset_server.load(LASER_SPRITE),
+                ..Default::default()
+            })
+            .insert(Laser)
+            .insert(Speed::default());
+        ready_fire.0 = false;
+    }
+
+    if keyboard_input.just_released(KeyCode::Space) {
+        ready_fire.0 = true;
+    }
+}
+
+fn laser_movement(
+    mut commands: Commands,
+    win_size: Res<WinSize>,
+    mut query: Query<(Entity, &Speed, &mut Transform, With<Laser>)>,
+) {
+    for (laser_entity, speed, mut laser_tf, _) in query.iter_mut() {
+        let translation = &mut laser_tf.translation;
+        translation.y += speed.0 * TIME_STEP;
+        if translation.y > win_size.h {
+            // Despawning is extremely important otherwise the movement will
+            // infinitely be calculated
+            commands.entity(laser_entity).despawn();
+        }
     }
 }
