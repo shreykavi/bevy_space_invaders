@@ -1,50 +1,20 @@
+#![allow(unused)] // Silences any unused warnings
+
 use bevy::prelude::*;
 
-#[derive(Component)]
-struct Person;
+const PLAYER_SPRITE: &str = "player_a_01.png";
 
-#[derive(Component)]
-struct Name(String);
-
-pub struct HelloPlugin;
-struct GreetTimer(Timer);
-
-impl Plugin for HelloPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(GreetTimer(Timer::from_seconds(2.0, true)))
-        .add_startup_system(add_people)
-        // .add_system(hello_world)
-        .add_system(greet_people);
-    }
-}
-
-fn add_people(mut commands: Commands) {
-    commands.spawn().insert(Person).insert(Name("Shrey Proctor".to_string()));
-    commands.spawn().insert(Person).insert(Name("Renzo Hume".to_string()));
-    commands.spawn().insert(Person).insert(Name("Zayna Nieves".to_string()));
-}
-
-// The "query" parameter here iterates over every Name component for entities that also 
-// have a Person component
-// 
-// time parameter allows us to access the Time resource
-fn greet_people(time: Res<Time>, mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>) {
-    // update our timer with the time elapsed since the last update
-    // if that caused the timer to finish, we say hello to everyone
-    if timer.0.tick(time.delta()).just_finished() {
-        for name in query.iter() {
-            println!("hello {}!", name.0);
-        }
-    }
-}
-
-fn hello_world() {
-    println!("hello world!");
-}
+//  ECS
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::rgb(0.04,0.04,0.04)))
+        .insert_resource(WindowDescriptor{
+            title: "Rust Invaders".to_string(),
+            width: 598.0,
+            height: 676.0,
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
-        .add_plugin(HelloPlugin)
         .run();
 }
