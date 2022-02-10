@@ -120,18 +120,27 @@ fn player_fire(
     if ready_fire.0 && keyboard_input.pressed(KeyCode::Space) {
         let x = player_tf.translation.x;
         let y = player_tf.translation.y;
-        commands
-            .spawn_bundle(SpriteBundle {
-                transform: Transform {
-                    // x,y,z
-                    translation: Vec3::new(x, y + 10., 0.),
+
+        let mut spawn_lasers = |x_offset: f32| {
+            commands
+                .spawn_bundle(SpriteBundle {
+                    transform: Transform {
+                        // x,y,z
+                        translation: Vec3::new(x + x_offset, y + 10., 0.),
+                        ..Default::default()
+                    },
+                    texture: asset_server.load(LASER_SPRITE),
                     ..Default::default()
-                },
-                texture: asset_server.load(LASER_SPRITE),
-                ..Default::default()
-            })
-            .insert(Laser)
-            .insert(Speed::default());
+                })
+                .insert(Laser)
+                .insert(Speed::default());
+        };
+
+        // Width of Ferris for lasers
+        let x_offset = 144. / 4. + 5.;
+        spawn_lasers(x_offset);
+        spawn_lasers(-x_offset);
+
         ready_fire.0 = false;
     }
 
