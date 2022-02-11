@@ -1,9 +1,10 @@
 use bevy::{core::FixedTimestep, prelude::*};
 use rand::{thread_rng, Rng};
 
-use crate::{ActiveEnemies, Enemy, WinSize};
+use crate::{ActiveEnemies, Enemy, FromEnemy, Laser, Speed, WinSize};
 
 const ENEMY_SPRITE: &str = "enemy_a_01.png";
+const ENEMY_LASER_SPRITE: &str = "laser_b_01.png";
 const SCALE: f32 = 0.8;
 
 pub struct EnemyPlugin;
@@ -14,6 +15,11 @@ impl Plugin for EnemyPlugin {
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(1.0))
                 .with_system(enemy_spawn),
+        )
+        .add_system_set(
+            SystemSet::new()
+                .with_run_criteria(FixedTimestep::step(0.9))
+                .with_system(enemy_fire),
         );
     }
 }
@@ -47,5 +53,33 @@ fn enemy_spawn(
             .insert(Enemy);
 
         active_enemies.0 += 1;
+    }
+}
+
+fn enemy_fire(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    enemy_query: Query<(&Transform, With<Enemy>)>,
+) {
+    // For each enemy shoot laser
+    for (&tf, _) in enemy_query.iter() {
+        let x = tf.translation.x;
+        let y = tf.translation.y;
+
+        // spawn enemy laser sprite
+        commands
+            .spawn_bundle(SpriteBundle {
+                transform: Transform {
+                    // x,y,z
+                    translation: Vec3::new(x, y, 0.),
+                    scale: Vec3::new(SCALE, -SCALE, 1.),
+                    ..Default::default()
+                },
+                texture: asset_server.load(ENEMY_LASER_SPRITE),
+                ..Default::default()
+            })
+            .insert(Laser)
+            .insert(FromEnemy)
+            .insert(Speed::default());
     }
 }

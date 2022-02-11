@@ -22,20 +22,22 @@ struct ActiveEnemies(u32);
 
 // Components:
 #[derive(Component)]
-struct Player;
-
-#[derive(Component)]
 struct Laser;
 
 #[derive(Component)]
-struct Enemy;
-
+struct Player;
 #[derive(Component)]
 struct PlayerReadyFire(bool);
+#[derive(Component)]
+struct FromPlayer;
+
+#[derive(Component)]
+struct Enemy;
+#[derive(Component)]
+struct FromEnemy;
 
 #[derive(Component)]
 struct Explosion;
-
 #[derive(Component)]
 struct ExplosionToSpawn(Vec3);
 
@@ -88,8 +90,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut windows: Re
 
 fn laser_hit_enemy(
     mut commands: Commands,
-    mut laser_query: Query<(Entity, &Transform, &Sprite, With<Laser>)>,
-    mut enemy_query: Query<(Entity, &Transform, &Sprite, With<Enemy>)>,
+    mut laser_query: Query<(Entity, &Transform, &Sprite, (With<Laser>, With<FromPlayer>))>,
+    mut enemy_query: Query<(Entity, &Transform, &Sprite, (With<Enemy>))>,
     mut active_enemies: ResMut<ActiveEnemies>,
 ) {
     // Had to hardcode sizes since bevy 0.6 no longer provides property
