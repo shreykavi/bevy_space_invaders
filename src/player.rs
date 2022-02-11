@@ -21,11 +21,6 @@ fn player_spawn(mut commands: Commands, asset_server: Res<AssetServer>, win_size
     let bottom = -win_size.h / 2.;
     commands
         .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(200., 100.)),
-                color: Color::rgb(1., 0.7, 0.7),
-                ..Default::default()
-            },
             transform: Transform {
                 // x,y,z
                 translation: Vec3::new(0., bottom + 75. / 4. + 20., 10.),
@@ -44,8 +39,7 @@ fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<(&Speed, &mut Transform, With<Player>)>,
 ) {
-    let (speed, mut transform, _) = query.single_mut();
-    {
+    if let Ok((speed, mut transform, _)) = query.get_single_mut() {
         let dir = if keyboard_input.pressed(KeyCode::Left) {
             -1.
         } else if keyboard_input.pressed(KeyCode::Right) {
@@ -63,37 +57,38 @@ fn player_fire(
     asset_server: Res<AssetServer>,
     mut query: Query<(&Transform, &mut PlayerReadyFire, With<Player>)>,
 ) {
-    let (player_tf, mut ready_fire, _) = query.single_mut();
-    if ready_fire.0 && keyboard_input.pressed(KeyCode::Space) {
-        let x = player_tf.translation.x;
-        let y = player_tf.translation.y;
+    if let Ok((player_tf, mut ready_fire, _)) = query.get_single_mut() {
+        if ready_fire.0 && keyboard_input.pressed(KeyCode::Space) {
+            let x = player_tf.translation.x;
+            let y = player_tf.translation.y;
 
-        let mut spawn_lasers = |x_offset: f32| {
-            commands
-                .spawn_bundle(SpriteBundle {
-                    transform: Transform {
-                        // x,y,z
-                        translation: Vec3::new(x + x_offset, y + 10., 0.),
+            let mut spawn_lasers = |x_offset: f32| {
+                commands
+                    .spawn_bundle(SpriteBundle {
+                        transform: Transform {
+                            // x,y,z
+                            translation: Vec3::new(x + x_offset, y + 10., 0.),
+                            ..Default::default()
+                        },
+                        texture: asset_server.load(PLAYER_LASER_SPRITE),
                         ..Default::default()
-                    },
-                    texture: asset_server.load(PLAYER_LASER_SPRITE),
-                    ..Default::default()
-                })
-                .insert(Laser)
-                .insert(FromPlayer)
-                .insert(Speed::default());
-        };
+                    })
+                    .insert(Laser)
+                    .insert(FromPlayer)
+                    .insert(Speed::default());
+            };
 
-        // Width of Ferris for lasers
-        let x_offset = 144. / 4. + 5.;
-        spawn_lasers(x_offset);
-        spawn_lasers(-x_offset);
+            // Width of Ferris for lasers
+            let x_offset = 144. / 4. + 5.;
+            spawn_lasers(x_offset);
+            spawn_lasers(-x_offset);
 
-        ready_fire.0 = false;
-    }
+            ready_fire.0 = false;
+        }
 
-    if keyboard_input.just_released(KeyCode::Space) {
-        ready_fire.0 = true;
+        if keyboard_input.just_released(KeyCode::Space) {
+            ready_fire.0 = true;
+        }
     }
 }
 

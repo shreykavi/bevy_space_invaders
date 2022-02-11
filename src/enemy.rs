@@ -97,7 +97,6 @@ fn enemy_laser_movement(
 ) {
     for (entity, speed, mut tf, _) in laser_query.iter_mut() {
         tf.translation.y -= speed.0 * TIME_STEP;
-        println!("{:?}", tf.translation);
         if tf.translation.y < -win_size.h / 2. - 50. {
             commands.entity(entity).despawn();
         }

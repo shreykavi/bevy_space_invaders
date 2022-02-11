@@ -63,7 +63,8 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_startup_system(setup)
-        .add_system(laser_hit_enemy)
+        .add_system(player_laser_hit_enemy)
+        .add_system(enemy_laser_hit_enemy)
         .add_system(explosion_to_spawn)
         .add_system(animate_explosion)
         .run();
@@ -88,7 +89,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut windows: Re
     // window.set_position(IVec2::new(1600,200));
 }
 
-fn laser_hit_enemy(
+fn player_laser_hit_enemy(
     mut commands: Commands,
     mut laser_query: Query<(Entity, &Transform, &Sprite, (With<Laser>, With<FromPlayer>))>,
     mut enemy_query: Query<(Entity, &Transform, &Sprite, (With<Enemy>))>,
@@ -122,6 +123,42 @@ fn laser_hit_enemy(
                 commands
                     .spawn()
                     .insert(ExplosionToSpawn(enemy_tf.translation.clone()));
+            }
+        }
+    }
+}
+
+fn enemy_laser_hit_enemy(
+    mut commands: Commands,
+    laser_query: Query<(Entity, &Transform, &Sprite), (With<Laser>, With<FromEnemy>)>,
+    mut player_query: Query<(Entity, &Transform, &Sprite), With<Player>>,
+) {
+    // Had to hardcode sizes since bevy 0.6 no longer provides property
+    let laser_size = Vec2::new(9., 54.);
+    let player_size = Vec2::new(144., 75.);
+    if let Ok((player_entity, player_tf, player_sprite)) = player_query.get_single_mut() {
+        for (laser_entity, laser_tf, laser_sprite) in laser_query.iter() {
+            let laser_scale = Vec3::truncate(laser_tf.scale);
+            let player_scale = Vec3::truncate(player_tf.scale);
+
+            let collision = collide(
+                laser_tf.translation,
+                laser_size, //* laser_scale,
+                player_tf.translation,
+                player_size * player_scale,
+            );
+
+            if let Some(_) = collision {
+                // player dies
+                commands.entity(player_entity).despawn();
+
+                // remove the laser
+                commands.entity(laser_entity).despawn();
+
+                // spawn explosion
+                commands
+                    .spawn()
+                    .insert(ExplosionToSpawn(player_tf.translation.clone()));
             }
         }
     }
