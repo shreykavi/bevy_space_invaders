@@ -6,6 +6,7 @@ mod player;
 use bevy::{prelude::*, sprite::collide_aabb::collide};
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
+use std::collections::HashSet;
 
 const EXPLOSION_SHEET: &str = "explo_a_sprite.png";
 const TIME_STEP: f32 = 1. / 60.;
@@ -95,6 +96,8 @@ fn player_laser_hit_enemy(
     mut enemy_query: Query<(Entity, &Transform, &Sprite, (With<Enemy>))>,
     mut active_enemies: ResMut<ActiveEnemies>,
 ) {
+    let mut enemies_blasted: HashSet<Entity> = HashSet::new();
+
     // Had to hardcode sizes since bevy 0.6 no longer provides property
     let laser_size = Vec2::new(9., 54.);
     let enemy_size = Vec2::new(84., 93.);
@@ -112,17 +115,21 @@ fn player_laser_hit_enemy(
             );
 
             if let Some(_) = collision {
-                // enemy dies
-                commands.entity(enemy_entity).despawn();
-                active_enemies.0 -= 1;
+                if enemies_blasted.get(&enemy_entity).is_none() {
+                    // enemy dies
+                    commands.entity(enemy_entity).despawn();
+                    active_enemies.0 -= 1;
+
+                    // spawn explosion
+                    commands
+                        .spawn()
+                        .insert(ExplosionToSpawn(enemy_tf.translation.clone()));
+
+                    enemies_blasted.insert(enemy_entity);
+                }
 
                 // remove the laser
                 commands.entity(laser_entity).despawn();
-
-                // spawn explosion
-                commands
-                    .spawn()
-                    .insert(ExplosionToSpawn(enemy_tf.translation.clone()));
             }
         }
     }
