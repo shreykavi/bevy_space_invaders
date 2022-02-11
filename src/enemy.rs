@@ -4,7 +4,7 @@ use rand::{thread_rng, Rng};
 use crate::{ActiveEnemies, Enemy, WinSize};
 
 const ENEMY_SPRITE: &str = "enemy_a_01.png";
-const SCALE: f32 = 1.;
+const SCALE: f32 = 0.8;
 
 pub struct EnemyPlugin;
 
