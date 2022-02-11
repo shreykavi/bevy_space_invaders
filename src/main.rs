@@ -7,6 +7,7 @@ use bevy::{prelude::*, sprite::collide_aabb::collide};
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 
+const EXPLOSION_SHEET: &str = "explo_a_sprite.png";
 const TIME_STEP: f32 = 1. / 60.;
 
 //  ECS
@@ -33,6 +34,12 @@ struct Enemy;
 struct PlayerReadyFire(bool);
 
 #[derive(Component)]
+struct Explosion;
+
+#[derive(Component)]
+struct ExplosionToSpawn(Vec3);
+
+#[derive(Component)]
 struct Speed(f32);
 impl Default for Speed {
     fn default() -> Self {
@@ -55,6 +62,8 @@ fn main() {
         .add_plugin(EnemyPlugin)
         .add_startup_system(setup)
         .add_system(laser_hit_enemy)
+        .add_system(explosion_to_spawn)
+        .add_system(animate_explosion)
         .run();
 }
 
@@ -106,6 +115,64 @@ fn laser_hit_enemy(
 
                 // remove the laser
                 commands.entity(laser_entity).despawn();
+
+                // spawn explosion
+                commands
+                    .spawn()
+                    .insert(ExplosionToSpawn(enemy_tf.translation.clone()));
+            }
+        }
+    }
+}
+
+fn explosion_to_spawn(
+    mut commands: Commands,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    asset_server: Res<AssetServer>,
+    query: Query<(Entity, &ExplosionToSpawn)>,
+) {
+    for (entity, explosion_to_spawn) in query.iter() {
+        let texture_handle = asset_server.load(EXPLOSION_SHEET);
+        commands
+            .spawn_bundle(SpriteSheetBundle {
+                texture_atlas: texture_atlases.add(TextureAtlas::from_grid(
+                    texture_handle,
+                    Vec2::new(64.0, 64.0),
+                    4,
+                    4,
+                )),
+                transform: Transform {
+                    translation: explosion_to_spawn.0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .insert(Explosion)
+            .insert(Timer::from_seconds(0.05, true));
+
+        commands.entity(entity).despawn();
+    }
+}
+
+fn animate_explosion(
+    mut commands: Commands,
+    time: Res<Time>,
+    texture_atlases: Res<Assets<TextureAtlas>>,
+    mut query: Query<(
+        Entity,
+        &mut Timer,
+        &mut TextureAtlasSprite,
+        &Handle<TextureAtlas>,
+        With<Explosion>,
+    )>,
+) {
+    for (entity, mut timer, mut sprite, texture_atlas_handle, _) in query.iter_mut() {
+        timer.tick(time.delta());
+        if timer.finished() {
+            let texture_atlas = texture_atlases.get(texture_atlas_handle).unwrap();
+            sprite.index += 1;
+            if sprite.index == texture_atlas.textures.len() {
+                commands.entity(entity).despawn()
             }
         }
     }
