@@ -3,7 +3,7 @@
 mod enemy;
 mod player;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, sprite::collide_aabb::collide};
 use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 
@@ -54,6 +54,7 @@ fn main() {
         .add_plugin(PlayerPlugin)
         .add_plugin(EnemyPlugin)
         .add_startup_system(setup)
+        .add_system(laser_hit_enemy)
         .run();
 }
 
@@ -74,4 +75,38 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>, mut windows: Re
     });
 
     // window.set_position(IVec2::new(1600,200));
+}
+
+fn laser_hit_enemy(
+    mut commands: Commands,
+    mut laser_query: Query<(Entity, &Transform, &Sprite, With<Laser>)>,
+    mut enemy_query: Query<(Entity, &Transform, &Sprite, With<Enemy>)>,
+    mut active_enemies: ResMut<ActiveEnemies>,
+) {
+    // Had to hardcode sizes since bevy 0.6 no longer provides property
+    let laser_size = Vec2::new(9., 54.);
+    let enemy_size = Vec2::new(84., 93.);
+    for (laser_entity, laser_tf, laser_sprite, _) in laser_query.iter_mut() {
+        for (enemy_entity, enemy_tf, enemy_sprite, _) in enemy_query.iter_mut() {
+            // truncate throws away the z coordinate
+            let laser_scale = Vec3::truncate(laser_tf.scale);
+            let enemy_scale = Vec3::truncate(enemy_tf.scale);
+
+            let collision = collide(
+                laser_tf.translation,
+                laser_size * laser_scale,
+                enemy_tf.translation,
+                enemy_size * enemy_scale,
+            );
+
+            if let Some(_) = collision {
+                // enemy dies
+                commands.entity(enemy_entity).despawn();
+                active_enemies.0 -= 1;
+
+                // remove the laser
+                commands.entity(laser_entity).despawn();
+            }
+        }
+    }
 }

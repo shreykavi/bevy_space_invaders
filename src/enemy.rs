@@ -35,11 +35,6 @@ fn enemy_spawn(
         // spawn the enemy
         commands
             .spawn_bundle(SpriteBundle {
-                // sprite: Sprite {
-                //     custom_size: Some(Vec2::new(200., 100.)),
-                //     color: Color::rgb(1., 0.7, 0.7),
-                //     ..Default::default()
-                // },
                 transform: Transform {
                     // x,y,z
                     translation: Vec3::new(x, y, 10.),
