@@ -1,8 +1,10 @@
 #![allow(unused)] // Silences any unused warnings
 
+mod enemy;
 mod player;
 
 use bevy::prelude::*;
+use enemy::EnemyPlugin;
 use player::PlayerPlugin;
 
 const TIME_STEP: f32 = 1. / 60.;
@@ -15,12 +17,17 @@ struct WinSize {
     h: f32,
 }
 
+struct ActiveEnemies(u32);
+
 // Components:
 #[derive(Component)]
 struct Player;
 
 #[derive(Component)]
 struct Laser;
+
+#[derive(Component)]
+struct Enemy;
 
 #[derive(Component)]
 struct PlayerReadyFire(bool);
@@ -42,9 +49,11 @@ fn main() {
             height: 676.0,
             ..Default::default()
         })
+        .insert_resource(ActiveEnemies(0))
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
         .add_plugin(PlayerPlugin)
+        .add_plugin(EnemyPlugin)
+        .add_startup_system(setup)
         .run();
 }
 
