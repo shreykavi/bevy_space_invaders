@@ -1,38 +1,57 @@
-use bevy::prelude::*;
+use bevy::{core::FixedTimestep, prelude::*};
 
-use crate::{FromPlayer, Laser, Player, PlayerReadyFire, Speed, WinSize, TIME_STEP};
+use crate::{FromPlayer, Laser, Player, PlayerReadyFire, PlayerState, Speed, WinSize, TIME_STEP};
 
 const PLAYER_SPRITE: &str = "player_a_01.png";
 const PLAYER_LASER_SPRITE: &str = "laser_a_01.png";
+const PLAYER_RESPAWN_DELAY: f64 = 2.;
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_stage("game_setup_players", SystemStage::single(player_spawn))
+        app.insert_resource(PlayerState::default())
+            .add_startup_stage("game_setup_players", SystemStage::single(player_spawn))
             .add_system(player_movement)
             .add_system(player_fire)
-            .add_system(laser_movement);
+            .add_system(laser_movement)
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(FixedTimestep::step(0.5))
+                    .with_system(player_spawn),
+            );
     }
 }
 
-fn player_spawn(mut commands: Commands, asset_server: Res<AssetServer>, win_size: Res<WinSize>) {
+fn player_spawn(
+    mut commands: Commands,
+    mut player_state: ResMut<PlayerState>,
+    time: Res<Time>,
+    asset_server: Res<AssetServer>,
+    win_size: Res<WinSize>,
+) {
+    let now = time.seconds_since_startup();
+    let last_shot = player_state.last_shot;
+
     // spawn a sprite
-    let bottom = -win_size.h / 2.;
-    commands
-        .spawn_bundle(SpriteBundle {
-            transform: Transform {
-                // x,y,z
-                translation: Vec3::new(0., bottom + 75. / 4. + 20., 10.),
-                scale: Vec3::new(0.5, 0.5, 1.),
+    if !player_state.on && (last_shot == 0. || now > last_shot + PLAYER_RESPAWN_DELAY) {
+        let bottom = -win_size.h / 2.;
+        commands
+            .spawn_bundle(SpriteBundle {
+                transform: Transform {
+                    // x,y,z
+                    translation: Vec3::new(0., bottom + 75. / 4. + 20., 10.),
+                    scale: Vec3::new(0.5, 0.5, 1.),
+                    ..Default::default()
+                },
+                texture: asset_server.load(PLAYER_SPRITE),
                 ..Default::default()
-            },
-            texture: asset_server.load(PLAYER_SPRITE),
-            ..Default::default()
-        })
-        .insert(Player)
-        .insert(PlayerReadyFire(true))
-        .insert(Speed::default());
+            })
+            .insert(Player)
+            .insert(PlayerReadyFire(true))
+            .insert(Speed::default());
+        player_state.spawned();
+    }
 }
 
 fn player_movement(

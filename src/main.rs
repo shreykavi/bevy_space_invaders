@@ -20,6 +20,28 @@ struct WinSize {
 }
 
 struct ActiveEnemies(u32);
+struct PlayerState {
+    on: bool,
+    last_shot: f64,
+}
+impl Default for PlayerState {
+    fn default() -> Self {
+        Self {
+            on: false,
+            last_shot: 0.,
+        }
+    }
+}
+impl PlayerState {
+    fn shot(&mut self, time: f64) {
+        self.on = false;
+        self.last_shot = time;
+    }
+    fn spawned(&mut self) {
+        self.on = true;
+        self.last_shot = 0.
+    }
+}
 
 // Components:
 #[derive(Component)]
@@ -137,6 +159,8 @@ fn player_laser_hit_enemy(
 
 fn enemy_laser_hit_enemy(
     mut commands: Commands,
+    mut player_state: ResMut<PlayerState>,
+    time: Res<Time>,
     laser_query: Query<(Entity, &Transform, &Sprite), (With<Laser>, With<FromEnemy>)>,
     mut player_query: Query<(Entity, &Transform, &Sprite), With<Player>>,
 ) {
@@ -158,6 +182,7 @@ fn enemy_laser_hit_enemy(
             if let Some(_) = collision {
                 // player dies
                 commands.entity(player_entity).despawn();
+                player_state.shot(time.seconds_since_startup());
 
                 // remove the laser
                 commands.entity(laser_entity).despawn();
