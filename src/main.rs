@@ -68,7 +68,7 @@ struct ExplosionToSpawn(Vec3);
 struct Speed(f32);
 impl Default for Speed {
     fn default() -> Self {
-        Self(500.)
+        Self(300.)
     }
 }
 
