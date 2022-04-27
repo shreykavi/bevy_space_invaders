@@ -1,4 +1,4 @@
-# learning_bevy
+# learning_bevy / bevy_space_invaders
 
 ![](assets/demo.gif)
 
