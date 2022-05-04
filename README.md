@@ -10,3 +10,5 @@ Note that this does require Vulkan to utilize GPU
 Space Invaders Tutorials from here: https://www.youtube.com/watch?v=Yb3vInxzKGE
 
 Note that the compilation is under `/docs` to workaround GitHub Pages hosting.
+
+Checkout this game here: https://shrey.codes/bevy_space_invaders/
