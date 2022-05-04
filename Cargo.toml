@@ -3,6 +3,9 @@ name = "bevy_game"
 version = "0.1.0"
 edition = "2021"
 
+[target.wasm32-unknown-unknown]
+runner = "wasm-server-runner"
+
 # if we were using workspaces this would be required
 # [workspace]
 # resolver = "2" # Important! wgpu/Bevy needs this!
