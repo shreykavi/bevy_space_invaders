@@ -6,6 +6,10 @@ edition = "2021"
 [target.wasm32-unknown-unknown]
 runner = "wasm-server-runner"
 
+[profile.release]
+lto = "thin"
+opt-level = 's'
+
 # if we were using workspaces this would be required
 # [workspace]
 # resolver = "2" # Important! wgpu/Bevy needs this!
